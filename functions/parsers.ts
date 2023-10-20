@@ -1,4 +1,4 @@
-import { EventAlarmResponse } from "../interfaces/OtherEvents";
+import { EventAlarmResponse } from "../types/OtherEvents";
 
 
 export function eventResponseParse(req: string): EventAlarmResponse {

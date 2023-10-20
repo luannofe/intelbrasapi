@@ -2,7 +2,7 @@ import AxiosDigestAuth from "@mhoc/axios-digest-auth";
 import { Buffer } from "buffer";
 import { Readable } from "stream";
 import { handleSnapshotData } from "./functions/general";
-import { EventAlarmResponse } from "./interfaces/OtherEvents";
+import { EventAlarmResponse } from "./types/OtherEvents";
 
 
 

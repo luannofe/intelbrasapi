@@ -1,5 +1,5 @@
 import { Readable } from "stream"
-import { SnapshotResponseObjectUnparsed, Snapshot, SnapshotResponseHeader } from "../interfaces/snapshot"
+import { SnapshotResponseObjectUnparsed, Snapshot, SnapshotResponseHeader } from "../types/snapshot"
 
 
 async function* separateChunksByBoundary(

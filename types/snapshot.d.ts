@@ -2,7 +2,7 @@ import { FaceRecognition } from "./FaceAnalysis"
 import { EventAlarmResponse } from "./OtherEvents"
 
 export type Snapshot = {
-    events: Event[],
+    events: {Events: Event[]},
     image: Buffer
 }
 

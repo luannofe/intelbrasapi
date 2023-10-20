@@ -89,3 +89,13 @@ export class Camera {
 }
 
 
+const cam = new Camera('192.169.99.238', 'IINms4562022', 'admin');
+
+(async () => {
+    console.log(cam)
+    for await (const snapshot of cam.receiveSnapshots())
+    {
+        console.log(snapshot.events)
+    }
+})()
+

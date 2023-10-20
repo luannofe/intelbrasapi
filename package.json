@@ -1,6 +1,6 @@
 {
-  "name": "intelbrasapi",
-  "version": "1.0.0",
+  "name": "intelbras-api",
+  "version": "1.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -9,6 +9,10 @@
     "prepublishOnly": "npm run build"
   },
   "author": "@luannofe",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/luannofe/intelbrasapi.git"
+  },
   "license": "ISC",
   "dependencies": {
     "@mhoc/axios-digest-auth": "^0.8.0",

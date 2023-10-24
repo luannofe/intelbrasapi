@@ -1,9 +1,10 @@
 import AxiosDigestAuth from "@mhoc/axios-digest-auth";
-import { Buffer } from "buffer";
 import { Readable } from "stream";
-import { handleSnapshotData } from "./functions/general";
-import { EventAlarmResponse } from "./types/OtherEvents";
-
+import { handleSnapshotData } from "./functions/snapshot";
+import { randomUUID } from "crypto";
+import * as dayjs from 'dayjs'
+import { writeFile } from "fs";
+import { Snapshot } from "./types/snapshot";
 
 
 
@@ -44,7 +45,7 @@ export class Camera {
   //   for await (const chunk of reqData) {
   //     console.log(chalk.bgBlue('new chunk'), chalk.reset())
   //     console.log(Buffer.from(chunk).toString())
-      
+
   //   }
   // }
 
@@ -52,8 +53,11 @@ export class Camera {
 
   /**
    * Creates a permanent connection to the device and listen for snapshots.
-   * @param {string} events - Events array in string format '[a,b,c]' for listening.
-   * @returns {EventAlarmResponse} Returns a EventAlarmResponse object each time an event is received.
+   * @param {string?} events - Events array in string format '[a,b,c]' for listening.
+   * @param {number?} heartbeat - Not implemented yet.
+   * @param {channel?} channel not implemented yet.
+   * @param {revive?} revive should the connection be restarted on error. Defaults to true.
+   * @returns {Snapshot} Returns a snapshot each time an event is received.
    * @example 
    * 
    * const cam = new Camera('1.2.3.4', 'username', 'password')
@@ -62,40 +66,40 @@ export class Camera {
    *      fs.writeFile('snapshotImage.jpeg', snapshot.image)
    * }
    */
-  
+
   async *receiveSnapshots(
     events: string = "[All]",
     heartbeat?: number,
-    channel?: number
+    channel?: number,
+    revive: Boolean = true
   ) {
-    const url = `http://${this.ip
-      }/cgi-bin/snapManager.cgi?action=attachFileProc${channel ? `&channel=${channel}` : ""
-      }${heartbeat ? `&heartbeat=${heartbeat}` : ""
-      }&Flags[0]=Event&Events=${events}`;
+    try {
+      const url = `http://${this.ip
+        }/cgi-bin/snapManager.cgi?action=attachFileProc${channel ? `&channel=${channel}` : ""
+        }${heartbeat ? `&heartbeat=${heartbeat}` : ""
+        }&Flags[0]=Event&Events=${events}`;
 
-    const req = await this.axios.request({
-      method: "GET",
-      url,
-      responseType: "stream",
-    });
+      const req = await this.axios.request({
+        method: "GET",
+        url,
+        responseType: "stream",
+      });
 
-    const reqData = Readable.from(req.data);
+      const reqData = Readable.from(req.data);
 
       for await (const snapshot of handleSnapshotData(reqData)) {
-          yield snapshot
+        yield snapshot
       }
-    
+
+    } catch (e) {
+      if (revive) {
+        this.receiveSnapshots(events, heartbeat, channel, revive)
+        console.error(e)
+      } else throw (e)
+    }
+
   }
 }
 
 
-const cam = new Camera('192.169.99.238', 'IINms4562022', 'admin');
-
-(async () => {
-    console.log(cam)
-    for await (const snapshot of cam.receiveSnapshots())
-    {
-        console.log(snapshot.events)
-    }
-})()
 

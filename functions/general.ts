@@ -1,110 +1,117 @@
 import { Readable } from "stream"
 import { SnapshotResponseObjectUnparsed, Snapshot, SnapshotResponseHeader } from "../types/snapshot"
+import { writeFile } from "fs"
+import { randomUUID } from "crypto"
 
+const debug = false
 
-async function* separateChunksByBoundary(
+export async function* separateChunksByBoundary(
   dataStream: Readable
 ): AsyncGenerator<Buffer> {
 
 
   const boundary = '--myboundary'
   let thisChunkTemporaryData: Buffer = Buffer.alloc(0)
+  let index = 0
 
   for await (const chunk of dataStream) {
 
+    debug && console.log('starting chunk loop')
+    debug && console.log('chunk:', Buffer.from(chunk).toString().slice(0,150))
+    
+    let header : SnapshotResponseObjectUnparsed | undefined 
+    
     thisChunkTemporaryData = Buffer.concat([thisChunkTemporaryData, chunk])
+    debug && console.log('temporary data:', thisChunkTemporaryData.toString().slice(0,150))
 
     let boundaryIndex = thisChunkTemporaryData.indexOf(boundary)
+    debug && writeFile('logs/log_' + index + '_'   + randomUUID() + '.txt', thisChunkTemporaryData.toString(), (err) => {})
+
+
 
     while (boundaryIndex !== -1) {
 
+
+      debug && console.log('inside while') 
+      
       const partData = thisChunkTemporaryData.subarray(0, boundaryIndex)
 
-      yield Buffer.from(partData)
+      if (partData.byteLength > 4) {
+
+        yield Buffer.from(partData)
+        debug &&  writeFile('logs/log_' + index  + '_yielded_' + randomUUID() + '.txt', partData.toString(), (err) => {})
+      } 
+
+
 
       thisChunkTemporaryData = Buffer.from(thisChunkTemporaryData.subarray(boundaryIndex + boundary.length))
 
+      debug &&  index != 0 && writeFile('logs/log_' + index +'_remained_' + randomUUID() + '.txt', thisChunkTemporaryData.toString(), (err) => {})
+
       boundaryIndex = thisChunkTemporaryData.indexOf(boundary)
+      debug && console.log(boundaryIndex)
 
     }
 
+    if (boundaryIndex == -1 && !header) {
+      header = await extractHeader(thisChunkTemporaryData)
+    }
+    
+    if (boundaryIndex == -1 && header) {
+      debug &&  console.log('needed:', header.header["Content-Length"])
+      debug &&  console.log('has:' , thisChunkTemporaryData.byteLength)
+      if (thisChunkTemporaryData.byteLength >= header.header["Content-Length"]) {
+        yield thisChunkTemporaryData
+        thisChunkTemporaryData = null
+        thisChunkTemporaryData = Buffer.alloc(0)
+        header = undefined
+        continue
+      }
+    }
+    
+    index ++
+    
   }
 
 
 
 }
 
-async function parseSnapshotResponse(response: [SnapshotResponseObjectUnparsed, SnapshotResponseObjectUnparsed]): Promise<Snapshot> {
 
-  const data = response.map((res) => {
-    if (res.header["Content-Type"] == 'text/plain') {
-      return genericParseStringToObject(res.data.toString())
+export async function extractHeader(buffer: Buffer) {
+  try {
+    const string = buffer.toString();
+    const headerEndIndex = string.indexOf('\r\n\r\n') + 4; // Find the first occurrence of \r\r
+  
+    const header = string.substring(0, headerEndIndex);
+    const headerLines = header.split('\n');
+  
+    let headerObject: Partial<SnapshotResponseHeader> = {};
+  
+  
+    for (const line of headerLines) {
+      const [key, value] = line.split(':');
+      if (key && value) {
+        headerObject[key.trim()] = key === 'Content-Length' ? Number(value.trim()) : value.trim();
+      }
     }
-
-    if (res.header['Content-Type'] == 'image/jpeg') {
-      return res.data
-    }
-  }) as [Event[], Buffer]
-
-  return { events: data[0], image: data[1] } as unknown as Snapshot
-}
-
-export async function* handleSnapshotData(dataStream: Readable) {
-
-  let responseCount = 0
-
-  let toParse: SnapshotResponseObjectUnparsed[] = []
-
-  for await (const chunks of separateChunksByBoundary(dataStream)) {
-
-
-    if (responseCount == 0 && chunks.byteLength < 8) {
-      continue
-    }
-
-    const snapshotResponseUnparsed = await extractHeader(chunks)
-
-    toParse.push(snapshotResponseUnparsed)
-
-    if (toParse.length >= 2) {
-      yield await parseSnapshotResponse([toParse[0], toParse[1]])
-      toParse = []
-      continue
-    }
-
-
-    responseCount++
+  
+    const result: SnapshotResponseObjectUnparsed = {
+      header: headerObject as SnapshotResponseHeader,
+      data: Buffer.from(buffer.subarray(headerEndIndex))
+    };
+    
+    if (!result.header["Content-Length"] || !result.header["Content-Type"]) return undefined
+  
+    return result;
+  } catch (e) {
+    console.error(e)
+    return undefined
   }
 
 }
 
-async function extractHeader(buffer: Buffer) {
-
-  const string = buffer.toString();
-  const headerEndIndex = string.indexOf('\r\n\r\n') + 4; // Find the first occurrence of \r\r
-
-  const header = string.substring(0, headerEndIndex);
-  const headerLines = header.split('\n');
-
-  let headerObject: Partial<SnapshotResponseHeader> = {};
-
-
-  for (const line of headerLines) {
-    const [key, value] = line.split(':');
-    if (key && value) {
-      headerObject[key.trim()] = key === 'Content-Length' ? Number(value.trim()) : value.trim();
-    }
-  }
-
-  const result: SnapshotResponseObjectUnparsed = {
-    header: headerObject as SnapshotResponseHeader,
-    data: Buffer.from(buffer.subarray(headerEndIndex))
-  };
-
-  return result;
-}
-
-function genericParseStringToObject(data: string) {
+export function genericParseStringToObject(data: string) {
   const lines = data.split('\n');
   const result = {};
 

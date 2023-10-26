@@ -18,9 +18,14 @@ export async function* separateChunksByBoundary(
 
     debug && console.log('starting chunk loop')
     debug && console.log('chunk:', Buffer.from(chunk).toString().slice(0,150))
+
+    if (Buffer.from(chunk).indexOf('Heartbeat') != -1) continue
     
+
     let header : SnapshotResponseObjectUnparsed | undefined 
     
+
+
     thisChunkTemporaryData = Buffer.concat([thisChunkTemporaryData, chunk])
     debug && console.log('temporary data:', thisChunkTemporaryData.toString().slice(0,150))
 

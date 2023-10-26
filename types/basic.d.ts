@@ -1,4 +1,4 @@
-export type EventType  = 'VideoMotion' | 'SmartMotionHuman' | 'FaceRecognition'
+export type EventType  = 'VideoMotion' | 'SmartMotionHuman' | 'FaceRecognition' | 'VideoBlind'
 export type EventAction = 'Stop' | 'Start' | 'Pause'
 
 export type EventBaseInfo = {

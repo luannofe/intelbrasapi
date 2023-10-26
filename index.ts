@@ -54,16 +54,16 @@ export class Camera {
   /**
    * Creates a permanent connection to the device and listen for snapshots.
    * @param {string?} events - Events array in string format '[a,b,c]' for listening.
-   * @param {number?} heartbeat - Not implemented yet.
+   * @param {number?} heartbeat - Delay in which the device should send a heartbeat to keep connection alive.
    * @param {channel?} channel not implemented yet.
-   * @param {revive?} revive should the connection be restarted on error. Defaults to true.
+   * @param {revive?} revive should the connection be restarted on error or end. Defaults to true.
    * @returns {Snapshot} Returns a snapshot each time an event is received.
    * @example 
    * 
    * const cam = new Camera('1.2.3.4', 'username', 'password')
    * 
-   * for await (const snapshot of cam.receiveSnaphosts()) {
-   *      fs.writeFile('snapshotImage.jpeg', snapshot.image)
+   * for await (const snapshot of cam.receiveSnapshots()) {
+   *      fs.writeFile('snapshotImage.jpeg', snapshot.image, (err) => console.error(err))
    * }
    */
 
@@ -87,6 +87,13 @@ export class Camera {
 
       const reqData = Readable.from(req.data);
 
+      reqData.on('end', () => {
+        console.log('ended')
+        if (revive) {
+          this.receiveSnapshots(events, heartbeat, channel, revive)
+        }
+      })
+
       for await (const snapshot of handleSnapshotData(reqData)) {
         yield snapshot
       }
@@ -100,6 +107,3 @@ export class Camera {
 
   }
 }
-
-
-

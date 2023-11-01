@@ -7,6 +7,7 @@ const debug = false
 async function parseSnapshotResponse(response: [SnapshotResponseObjectUnparsed, SnapshotResponseObjectUnparsed]): Promise<Snapshot> {
 
     const data = response.map((res) => {
+
         if (res.header["Content-Type"] == 'text/plain') {
             return genericParseStringToObject(res.data.toString())
         }
@@ -27,10 +28,22 @@ export async function* handleSnapshotData(dataStream: Readable) {
 
         const snapshotResponseUnparsed = await extractHeader(chunks)
 
+        if (!snapshotResponseUnparsed.header) {
+            toParse = []
+            continue
+        }
+
         toParse.push(snapshotResponseUnparsed)
         debug &&  console.log('pushed to toParse, it has now ', toParse.length)
         debug && console.log(toParse)
+        
         if (toParse.length >= 2) {
+            
+            if (toParse[0].header['Content-Type'] !== 'text/plain' || toParse[1].header['Content-Type'] !== 'image/jpeg') {
+                toParse = []
+                continue
+            }
+
             yield await parseSnapshotResponse([toParse[0], toParse[1]])
             debug && console.log('sending snapshot and cleaning toParse ', toParse.length)
             toParse = []

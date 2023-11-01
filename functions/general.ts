@@ -110,7 +110,7 @@ export async function extractHeader(buffer: Buffer) {
   
     return result;
   } catch (e) {
-    console.error(e)
+    console.error('PARSING ERROR JUST IGNORE: ' , e)
     return undefined
   }
 

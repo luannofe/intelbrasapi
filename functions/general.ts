@@ -30,7 +30,7 @@ export async function* separateChunksByBoundary(
     debug && console.log('temporary data:', thisChunkTemporaryData.toString().slice(0,150))
 
     let boundaryIndex = thisChunkTemporaryData.indexOf(boundary)
-    debug && writeFile('logs/log_' + index + '_'   + randomUUID() + '.txt', thisChunkTemporaryData.toString(), (err) => {})
+    //debug && writeFile('logs/log_' + index + '_'   + randomUUID() + '.txt', thisChunkTemporaryData.toString(), (err) => {})
 
 
 

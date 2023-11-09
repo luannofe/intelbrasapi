@@ -108,18 +108,3 @@ export class Camera {
   }
 }
 
-
-async function receiveData() {
-  try {
-      for await (const snapshot of new Camera('172.168.11.167', 'IINms4562022', 'admin').receiveSnapshots('[FaceRecognition]', 10, 1, true)) {
-
-          console.log(snapshot)
-      }
-  } catch (e) {
-      console.error(e)
-      receiveData()
-  }
-
-}
-
-receiveData()

@@ -1,6 +1,6 @@
 {
   "name": "intelbras-api",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
@@ -21,8 +21,10 @@
     "typescript": "^5.2.2"
   },
   "nodemonConfig": {
-    "ignore": ["pics/*"]
-},
+    "ignore": [
+      "pics/*"
+    ]
+  },
   "devDependencies": {
     "@types/busboy": "^1.5.2",
     "@types/multiparty": "^0.0.34",
